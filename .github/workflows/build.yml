@@ -25,7 +25,7 @@ jobs:
         run: |
           cd myapp
           version=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
-          new_version=$(echo $version | awk -F. -v OFS=. '{$NF += 2 ; print}')
+          new_version=$(echo $version | awk -F. -v OFS=. '{$NF += 0.1 ; print}')
           mvn versions:set -DnewVersion=$new_version
           git config --global user.name 'github-actions'
           git config --global user.email 'github-actions@github.com'
