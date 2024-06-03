@@ -50,6 +50,7 @@ jobs:
       - name: Build Docker image
         run: |
           cd myapp
+          ls -la
           docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/maven-hello-world:${{ steps.bump_version.outputs.new_version }} .
         env:
           DOCKER_BUILDKIT: 1
