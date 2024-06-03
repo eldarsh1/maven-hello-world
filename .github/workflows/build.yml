@@ -23,7 +23,9 @@ jobs:
       - name: Increase Patch version
         id: bump_version
         run: |
+          git pull
           cd myapp
+          ls -l
           version=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
           new_version=$(echo $version | awk -F. -v OFS=. '{$NF += 0.1 ; print}')
           mvn versions:set -DnewVersion=$new_version
