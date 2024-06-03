@@ -1,0 +1,62 @@
+name: Java CI with Maven
+
+on:
+  push:
+    branches:
+      - firstrun
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v2
+        with:
+          java-version: '11'
+          distribution: 'adopt'
+
+      - name: Increase Patch version
+        id: bump_version
+        run: |
+          cd myapp
+          version=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          new_version=$(echo $version | awk -F. -v OFS=. '{$NF += 1 ; print}')
+          mvn versions:set -DnewVersion=$new_version
+          git config --global user.name 'github-actions'
+          git config --global user.email 'github-actions@github.com'
+          git add pom.xml
+          git commit -m "Bump version to $new_version"
+          git push
+          echo "::set-output name=new_version::$new_version"
+
+      - name: Compile the code
+        run: |
+          cd myapp
+          mvn compile
+
+      - name: Package into artifact
+        run: |
+          cd myapp
+          mvn package
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build Docker image
+        run: |
+          cd myapp
+          docker build . -t ${{ secrets.DOCKER_HUB_USERNAME }}/maven-hello-world:${{ steps.bump_version.outputs.new_version }}
+        env:
+          DOCKER_BUILDKIT: 1
+
+      - name: Login to Docker Hub
+        run: echo "${{ secrets.DOCKER_HUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin
+
+      - name: Push Docker image
+        run: |
+          cd myapp
+          docker push ${{ secrets.DOCKER_HUB_USERNAME }}/maven-hello-world:${{ steps.bump_version.outputs.new_version }}
