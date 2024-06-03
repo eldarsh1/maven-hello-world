@@ -23,14 +23,13 @@ jobs:
       - name: Increase Patch version
         id: bump_version
         run: |
-          git pull
           cd myapp
-          ls -l
           version=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
-          new_version=$(echo $version | awk -F. -v OFS=. '{$NF += 0.1 ; print}')
+          new_version=$(echo $version | awk -F. -v OFS=. '{$NF += 1 ; print}')
           mvn versions:set -DnewVersion=$new_version
           git config --global user.name 'github-actions'
           git config --global user.email 'github-actions@github.com'
+          git pull --rebase
           git add pom.xml
           git commit -m "Bump version to $new_version"
           git push
@@ -51,7 +50,7 @@ jobs:
       - name: Build Docker image
         run: |
           cd myapp
-          docker build . -t ${{ secrets.DOCKER_HUB_USERNAME }}/maven-hello-world:${{ steps.bump_version.outputs.new_version }}
+          docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/maven-hello-world:${{ steps.bump_version.outputs.new_version }} .
         env:
           DOCKER_BUILDKIT: 1
 
@@ -60,5 +59,4 @@ jobs:
 
       - name: Push Docker image
         run: |
-          cd myapp
           docker push ${{ secrets.DOCKER_HUB_USERNAME }}/maven-hello-world:${{ steps.bump_version.outputs.new_version }}
