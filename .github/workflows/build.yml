@@ -24,12 +24,12 @@ jobs:
         id: bump_version
         run: |
           cd myapp
+          git pull
           version=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
           new_version=$(echo $version | awk -F. -v OFS=. '{$NF += 1 ; print}')
           mvn versions:set -DnewVersion=$new_version
           git config --global user.name 'github-actions'
           git config --global user.email 'github-actions@github.com'
-          git pull
           git add pom.xml
           git commit -m "Bump version to $new_version"
           git push
